@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/golangci/golangci-lint v1.53.2
 	github.com/google/go-licenses v1.6.0
-	golang.org/x/vuln v0.1.0
+	golang.org/x/vuln v1.0.0
 )
 
 require (
