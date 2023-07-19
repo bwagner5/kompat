@@ -42,7 +42,10 @@ func Parse(filePaths ...string) (Kompat, error) {
 		url, ok := toURL(f)
 		if ok {
 			if !strings.HasSuffix(url, ".yaml") {
-				url = fmt.Sprintf("%s/blobs/main/%s", url, DefaultFileName)
+				if strings.Contains(url, "github.com") {
+					url = fmt.Sprintf("%s/main/%s", url, DefaultFileName)
+					url = strings.Replace(url, "github.com", "raw.githubusercontent.com", 1)
+				}
 			}
 			resp, err := http.Get(url)
 			if err != nil {
