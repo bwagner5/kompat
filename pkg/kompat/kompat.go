@@ -1,3 +1,16 @@
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package kompat
 
 import (
@@ -47,7 +60,7 @@ func Parse(filePaths ...string) (Kompat, error) {
 					url = strings.Replace(url, "github.com", "raw.githubusercontent.com", 1)
 				}
 			}
-			resp, err := http.Get(url)
+			resp, err := http.Get(url) //nolint:gosec
 			if err != nil {
 				return Kompat{}, err
 			}
@@ -57,7 +70,8 @@ func Parse(filePaths ...string) (Kompat, error) {
 				return Kompat{}, err
 			}
 		} else {
-			f, err := homedir.Expand(f)
+			var err error
+			f, err = homedir.Expand(f)
 			if err != nil {
 				return Kompat{}, err
 			}
@@ -78,7 +92,8 @@ func Parse(filePaths ...string) (Kompat, error) {
 func Merge(kompats ...Kompat) Kompat {
 	var kompat Kompat
 	for _, k := range kompats {
-		mergo.Merge(&kompat, k)
+		// ignore err returned since it can't really error
+		_ = mergo.Merge(&kompat, k)
 	}
 	return kompat
 }
