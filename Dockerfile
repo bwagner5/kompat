@@ -1,3 +1,3 @@
 FROM scratch
-ENTRYPOINT ["/go-cli-template"]
-COPY go-cli-template /
+ENTRYPOINT ["/kompat"]
+COPY kompat /

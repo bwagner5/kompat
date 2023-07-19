@@ -55,7 +55,7 @@ var (
 	globalOpts = GlobalOptions{}
 	rootOpts   = RootOptions{}
 	rootCmd    = &cobra.Command{
-		Use:     "go-cli-template",
+		Use:     "kompat",
 		Version: version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if rootOpts.Attribution {

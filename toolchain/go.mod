@@ -1,4 +1,4 @@
-module github.com/bwagner5/go-cli-template/toolchain
+module github.com/bwagner5/kompat/toolchain
 
 go 1.20
 

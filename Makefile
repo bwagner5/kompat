@@ -17,7 +17,7 @@ goreleaser: ## Release snapshot
 
 .PHONY: build
 build: generate ## build binary using current OS and Arch
-	go build -a -ldflags="-s -w -X main.version=${VERSION}" -o ${BUILD_DIR}/go-cli-template-${GOOS}-${GOARCH} ${BUILD_DIR}/../cmd/*.go
+	go build -a -ldflags="-s -w -X main.version=${VERSION}" -o ${BUILD_DIR}/kompat-${GOOS}-${GOARCH} ${BUILD_DIR}/../cmd/*.go
 
 .PHONY: test
 test: ## run go tests and benchmarks

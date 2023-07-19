@@ -1,15 +1,15 @@
 # Open Source Software Attribution
 
 
-The go-cli-template includes the following third-party software/licensing:
+The kompat includes the following third-party software/licensing:
 
 
 
-## github.com/bwagner5/go-cli-template
+## github.com/bwagner5/kompat
 
-* Name: github.com/bwagner5/go-cli-template
+* Name: github.com/bwagner5/kompat
 * Version: Unknown
-* License: [Apache-2.0](https://github.com/bwagner5/go-cli-template/blob/HEAD/LICENSE)
+* License: [Apache-2.0](https://github.com/bwagner5/kompat/blob/HEAD/LICENSE)
 
 ```
 

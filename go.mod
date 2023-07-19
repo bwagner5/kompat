@@ -1,4 +1,4 @@
-module github.com/bwagner5/go-cli-template
+module github.com/bwagner5/kompat
 
 go 1.20
 
