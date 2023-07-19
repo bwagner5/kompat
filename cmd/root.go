@@ -23,17 +23,16 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/imdario/mergo"
 	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 const (
-	OutputYAML       = "yaml"
-	OutputTableShort = "short"
-	OutputTableWide  = "wide"
+	OutputJSON     = "json"
+	OutputYAML     = "yaml"
+	OutputTable    = "table"
+	OutputMarkdown = "md"
 )
 
 var (
@@ -74,32 +73,13 @@ func main() {
 	rootCmd.Flags().BoolVar(&rootOpts.Attribution, "attribution", false, "show attributions")
 	rootCmd.PersistentFlags().BoolVar(&globalOpts.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&globalOpts.Version, "version", false, "version")
-	rootCmd.PersistentFlags().StringVarP(&globalOpts.Output, "output", "o", OutputTableShort,
-		fmt.Sprintf("Output mode: %v", []string{OutputTableShort, OutputTableWide, OutputYAML}))
-	rootCmd.PersistentFlags().StringVarP(&globalOpts.ConfigFile, "file", "f", "", "YAML Config File")
+	rootCmd.PersistentFlags().StringVarP(&globalOpts.Output, "output", "o", OutputTable,
+		fmt.Sprintf("Output mode: %v", []string{OutputTable, OutputJSON, OutputYAML, OutputMarkdown}))
 
 	rootCmd.AddCommand(&cobra.Command{Use: "completion", Hidden: true})
 	cobra.EnableCommandSorting = false
 
 	lo.Must0(rootCmd.Execute())
-}
-
-func ParseConfig[T any](globalOpts GlobalOptions, opts T) (T, error) {
-	if globalOpts.ConfigFile == "" {
-		return opts, nil
-	}
-	configBytes, err := os.ReadFile(globalOpts.ConfigFile)
-	if err != nil {
-		return opts, err
-	}
-	var parsedCreateOpts T
-	if err := yaml.Unmarshal(configBytes, &parsedCreateOpts); err != nil {
-		return opts, err
-	}
-	if err := mergo.Merge(&opts, parsedCreateOpts, mergo.WithOverride); err != nil {
-		return opts, err
-	}
-	return opts, nil
 }
 
 func PrettyEncode(data any) string {

@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/imdario/mergo v0.3.16
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.38.1
 	github.com/spf13/cobra v1.7.0
