@@ -3,7 +3,7 @@ module github.com/bwagner5/kompat
 go 1.20
 
 require (
-	github.com/imdario/mergo v0.3.16
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.38.1

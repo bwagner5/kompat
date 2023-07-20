@@ -14,12 +14,7 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-
-	"github.com/bwagner5/kompat/pkg/kompat"
 )
 
 type GetOptions struct {
@@ -34,29 +29,11 @@ var (
 		Long:  `get`,
 		Args:  cobra.MinimumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			kompatFile, err := kompat.Parse(getOpts.File)
-			if err != nil {
-				fmt.Printf("Unable to parse kompat file: %v\n", err)
-				os.Exit(1)
-			}
-			switch globalOpts.Output {
-			case OutputJSON:
-				fmt.Println(kompatFile.JSON())
-				os.Exit(0)
-			case OutputYAML:
-				fmt.Println(kompatFile.YAML())
-				os.Exit(0)
-			case OutputMarkdown:
-				fmt.Println(kompatFile.Markdown())
-				os.Exit(0)
-			case OutputTable:
 
-			}
 		},
 	}
 )
 
 func init() {
 	rootCmd.AddCommand(cmdGet)
-	cmdGet.Flags().StringVarP(&getOpts.File, "file", "f", ".compatibility.yaml", "path or url to the compatibility.yaml file")
 }

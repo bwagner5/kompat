@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/bwagner5/kompat/pkg/kompat"
 	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
@@ -39,14 +40,15 @@ var (
 )
 
 type GlobalOptions struct {
-	Verbose    bool
-	Version    bool
-	Output     string
-	ConfigFile string
+	Verbose bool
+	Version bool
+	Output  string
 }
 
 type RootOptions struct {
-	Attribution bool
+	Attribution   bool
+	LastNVersions int
+	K8sVersion    string
 }
 
 var (
@@ -55,9 +57,31 @@ var (
 	rootCmd    = &cobra.Command{
 		Use:     "kompat",
 		Version: version,
+		Args:    cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			if rootOpts.Attribution {
 				fmt.Println(attribution)
+				os.Exit(0)
+			}
+			kompatList, err := kompat.Parse(args...)
+			if err != nil {
+				fmt.Printf("Unable to parse kompat file: %v\n", err)
+				os.Exit(1)
+			}
+			opts := kompat.Options{
+				// LastN:   rootOpts.LastNVersions,
+				// Version: rootOpts.K8sVersion,
+			}
+			switch globalOpts.Output {
+			case OutputJSON:
+				fmt.Println(kompatList.JSON())
+				os.Exit(0)
+			case OutputYAML:
+				fmt.Println(kompatList.YAML())
+				os.Exit(0)
+			case OutputTable:
+			case OutputMarkdown:
+				fmt.Println(kompatList.Markdown(opts))
 				os.Exit(0)
 			}
 		},
@@ -72,11 +96,14 @@ func main() {
 	rootCmd.Flags().BoolVar(&rootOpts.Attribution, "attribution", false, "show attributions")
 	rootCmd.PersistentFlags().BoolVar(&globalOpts.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&globalOpts.Version, "version", false, "version")
-	rootCmd.PersistentFlags().StringVarP(&globalOpts.Output, "output", "o", OutputTable,
+	rootCmd.PersistentFlags().StringVarP(&globalOpts.Output, "output", "o", OutputMarkdown,
 		fmt.Sprintf("Output mode: %v", []string{OutputTable, OutputJSON, OutputYAML, OutputMarkdown}))
 
 	rootCmd.AddCommand(&cobra.Command{Use: "completion", Hidden: true})
 	cobra.EnableCommandSorting = false
+
+	rootCmd.PersistentFlags().IntVarP(&rootOpts.LastNVersions, "last-n-versions", "n", 4, "Last n K8s versions")
+	rootCmd.PersistentFlags().StringVar(&rootOpts.K8sVersion, "k8s-version", "k", "Last n K8s versions")
 
 	lo.Must0(rootCmd.Execute())
 }
