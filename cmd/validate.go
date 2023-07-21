@@ -17,8 +17,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bwagner5/kompat/pkg/kompat"
 	"github.com/spf13/cobra"
+
+	"github.com/bwagner5/kompat/pkg/kompat"
 )
 
 var (

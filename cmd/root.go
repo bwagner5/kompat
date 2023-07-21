@@ -22,10 +22,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/bwagner5/kompat/pkg/kompat"
 	"github.com/olekukonko/tablewriter"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+
+	"github.com/bwagner5/kompat/pkg/kompat"
 )
 
 const (
