@@ -109,11 +109,11 @@ func Parse(filePaths ...string) (List, error) {
 				return nil, err
 			}
 		}
-		List, err := toKompats(contents)
+		list, err := toKompats(contents)
 		if err != nil {
 			return nil, err
 		}
-		kompats = append(kompats, List...)
+		kompats = append(kompats, list...)
 	}
 	return kompats, nil
 }
