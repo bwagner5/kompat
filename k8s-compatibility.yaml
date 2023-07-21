@@ -1,4 +1,4 @@
-appName: "Kompat"
+name: "Kompat"
 compatibility:
   - appVersion: 0.12
     minK8sVersion: 1.22

@@ -1,4 +1,4 @@
-appName: "Karpenter"
+name: "karpenter"
 compatibility:
   - appVersion: 0.29.x
     minK8sVersion: 1.21
@@ -6,7 +6,7 @@ compatibility:
   - appVersion: 0.28.1
     minK8sVersion: 1.21
     maxK8sVersion: 1.27
-  - appVersion: 0.28.0
+  - appVersion: 0.28.x
     minK8sVersion: 1.21
     maxK8sVersion: 1.25
   - appVersion: 0.27.x
@@ -31,7 +31,7 @@ compatibility:
     minK8sVersion: 1.20
     maxK8sVersion: 1.24
 ---
-appName: "OtherApp"
+name: "OtherApp"
 compatibility:
   - appVersion: 0.32
     minK8sVersion: 1.22

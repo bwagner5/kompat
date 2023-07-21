@@ -49,6 +49,7 @@ type RootOptions struct {
 	Attribution   bool
 	LastNVersions int
 	K8sVersion    string
+	Branch        string
 }
 
 var (
@@ -63,14 +64,17 @@ var (
 				fmt.Println(attribution)
 				os.Exit(0)
 			}
+			if rootOpts.Branch != "" {
+				kompat.DefaultGithubBranch = rootOpts.Branch
+			}
 			kompatList, err := kompat.Parse(args...)
 			if err != nil {
 				fmt.Printf("Unable to parse kompat file: %v\n", err)
 				os.Exit(1)
 			}
 			opts := kompat.Options{
-				// LastN:   rootOpts.LastNVersions,
-				// Version: rootOpts.K8sVersion,
+				LastN:   rootOpts.LastNVersions,
+				Version: rootOpts.K8sVersion,
 			}
 			switch globalOpts.Output {
 			case OutputJSON:
@@ -103,7 +107,8 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	rootCmd.PersistentFlags().IntVarP(&rootOpts.LastNVersions, "last-n-versions", "n", 4, "Last n K8s versions")
-	rootCmd.PersistentFlags().StringVar(&rootOpts.K8sVersion, "k8s-version", "k", "Last n K8s versions")
+	rootCmd.PersistentFlags().StringVar(&rootOpts.K8sVersion, "k8s-version", "", "search for compatibility with a specific k8s version")
+	rootCmd.PersistentFlags().StringVarP(&rootOpts.Branch, "branch", "b", "main", "default github branch for remote lookups")
 
 	lo.Must0(rootCmd.Execute())
 }

@@ -14,26 +14,33 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/bwagner5/kompat/pkg/kompat"
 	"github.com/spf13/cobra"
 )
 
-type GetOptions struct {
-	File string
-}
-
 var (
-	getOpts = GetOptions{}
-	cmdGet  = &cobra.Command{
-		Use:   "get ",
-		Short: "get",
-		Long:  `get`,
+	cmdValidate = &cobra.Command{
+		Use:   "validate ",
+		Short: "validate",
+		Long:  `validate`,
 		Args:  cobra.MinimumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-
+			if rootOpts.Branch != "" {
+				kompat.DefaultGithubBranch = rootOpts.Branch
+			}
+			_, err := kompat.Parse(args...)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			fmt.Println("✅ Validation Successful")
 		},
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(cmdGet)
+	rootCmd.AddCommand(cmdValidate)
 }

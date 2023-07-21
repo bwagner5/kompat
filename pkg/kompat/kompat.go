@@ -15,6 +15,7 @@ package kompat
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,13 +35,14 @@ import (
 )
 
 var (
-	DefaultFileName = "compatibility.yaml"
+	DefaultFileName     = "k8s-compatibility.yaml"
+	DefaultGithubBranch = "main"
 )
 
 type KompatList []Kompat
 
 type Kompat struct {
-	AppName       string          `yaml:"appName" json:"appName"`
+	Name          string          `yaml:"name" json:"name"`
 	Compatibility []Compatibility `yaml:"compatibility" json:"compatibility"`
 }
 
@@ -53,6 +55,38 @@ type Compatibility struct {
 type Options struct {
 	LastN   int
 	Version string
+}
+
+//go:generate cp -r ../../k8s-compatibility.yaml ./
+//go:embed k8s-compatibility.yaml
+var compatibilityFile []byte
+
+func IsCompatible(appVersion string, k8sVersion string) error {
+	kompats, err := toKompats(compatibilityFile)
+	if err != nil {
+		return err
+	}
+	for _, k := range kompats {
+		k8sToAppVersions := k.expand()
+		appVersions, ok := k8sToAppVersions[k8sVersion]
+		if !ok {
+			return fmt.Errorf("%s version %s is not compatible with K8s version %s", k.Name, appVersion, k8sVersion)
+		}
+		// check if there is any exact matches across any k8s version buckets since that signifies an override
+		allAppVersions := lo.Uniq(lo.Flatten(lo.Values(k8sToAppVersions)))
+		if exactMatch := lo.Contains(allAppVersions, appVersion); exactMatch {
+			if ok := lo.Contains(appVersions, appVersion); !ok {
+				return fmt.Errorf("%s version %s is not compatible with K8s version %s", k.Name, appVersion, k8sVersion)
+			}
+		} else {
+			if ok := lo.ContainsBy(appVersions, func(version string) bool {
+				return strings.HasPrefix(appVersion, strings.ReplaceAll(version, ".x", ""))
+			}); !ok {
+				return fmt.Errorf("%s version %s is not compatible with K8s version %s", k.Name, appVersion, k8sVersion)
+			}
+		}
+	}
+	return nil
 }
 
 func Parse(filePaths ...string) (KompatList, error) {
@@ -75,21 +109,31 @@ func Parse(filePaths ...string) (KompatList, error) {
 				return nil, err
 			}
 		}
-		decoder := yaml.NewDecoder(bytes.NewBuffer(contents))
-		for {
-			var kompat Kompat
-			err := decoder.Decode(&kompat)
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			if err != nil {
-				return nil, err
-			}
-			if err := kompat.Validate(); err != nil {
-				return nil, err
-			}
-			kompats = append(kompats, kompat)
+		kompatList, err := toKompats(contents)
+		if err != nil {
+			return nil, err
 		}
+		kompats = append(kompats, kompatList...)
+	}
+	return kompats, nil
+}
+
+func toKompats(contents []byte) (KompatList, error) {
+	var kompats []Kompat
+	decoder := yaml.NewDecoder(bytes.NewBuffer(contents))
+	for {
+		var kompat Kompat
+		err := decoder.Decode(&kompat)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if err := kompat.Validate(); err != nil {
+			return nil, err
+		}
+		kompats = append(kompats, kompat)
 	}
 	return kompats, nil
 }
@@ -100,13 +144,15 @@ func (k Kompat) Validate() error {
 		minK8sVersion := strings.ReplaceAll(c.MinK8sVersion, ".x", "")
 		maxK8sVersion := strings.ReplaceAll(c.MaxK8sVersion, ".x", "")
 		if _, err := semver.NewVersion(appVersion); err != nil {
-			return fmt.Errorf("unable to parse compatibility for \"%s\": appVersion \"%s\" is invalid: %w", k.AppName, c.AppVersion, err)
+			return fmt.Errorf("unable to parse compatibility for \"%s\": appVersion \"%s\" is invalid: %w", k.Name, c.AppVersion, err)
 		}
 		if _, err := semver.NewVersion(minK8sVersion); err != nil {
-			return fmt.Errorf("unable to parse compatibility for \"%s\": minK8sVersion \"%s\" is invalid: %w", k.AppName, c.MinK8sVersion, err)
+			return fmt.Errorf("unable to parse compatibility for \"%s\": minK8sVersion \"%s\" is invalid: %w", k.Name, c.MinK8sVersion, err)
 		}
-		if _, err := semver.NewVersion(maxK8sVersion); err != nil {
-			return fmt.Errorf("unable to parse compatibility for \"%s\": maxK8sVersion \"%s\" is invalid: %w", k.AppName, c.MaxK8sVersion, err)
+		if maxK8sVersion != "" {
+			if _, err := semver.NewVersion(maxK8sVersion); err != nil {
+				return fmt.Errorf("unable to parse compatibility for \"%s\": maxK8sVersion \"%s\" is invalid: %w", k.Name, c.MaxK8sVersion, err)
+			}
 		}
 	}
 	return nil
@@ -143,10 +189,14 @@ func (k Kompat) Markdown(opts ...Options) string {
 	// options := mergeOptions(opts...)
 	out := bytes.Buffer{}
 	table := tablewriter.NewWriter(&out)
-	headers := []string{"K8s Versions"}
-	data := []string{fmt.Sprintf("%s Versions", k.AppName)}
+	headers := []string{"Kubernetes"}
+	data := []string{k.Name}
 	for _, c := range k.Compatibility {
-		headers = append(headers, fmt.Sprintf("%s - %s", c.MinK8sVersion, c.MaxK8sVersion))
+		if c.MaxK8sVersion == "" || c.MinK8sVersion == c.MaxK8sVersion {
+			headers = append(headers, fmt.Sprintf("%s+", c.MinK8sVersion))
+		} else {
+			headers = append(headers, fmt.Sprintf("%s - %s", c.MinK8sVersion, c.MaxK8sVersion))
+		}
 		data = append(data, c.AppVersion)
 	}
 	table.SetHeader(headers)
@@ -159,12 +209,12 @@ func (k Kompat) Markdown(opts ...Options) string {
 
 func (k KompatList) Markdown(opts ...Options) string {
 	options := mergeOptions(opts...)
-	if len(k) == 1 {
-		return k[0].Markdown()
-	}
+	// if len(k) == 1 {
+	// 	return k[0].Markdown()
+	// }
 	out := bytes.Buffer{}
 	table := tablewriter.NewWriter(&out)
-	headers := []string{"K8s Versions"}
+	headers := []string{"Kubernetes"}
 	var data [][]string
 	// Get all k8s versions for the first row
 	k8sVersions := k.k8sVersions()
@@ -175,7 +225,8 @@ func (k KompatList) Markdown(opts ...Options) string {
 		}
 		headers = append(headers, version)
 	} else if options.LastN != 0 {
-		headers = append(headers, k8sVersions[len(k8sVersions)-options.LastN:]...)
+		lastN := lo.Min([]int{options.LastN, len(k8sVersions)})
+		headers = append(headers, k8sVersions[len(k8sVersions)-lastN:]...)
 	} else {
 		headers = append(headers, k8sVersions...)
 	}
@@ -187,7 +238,7 @@ func (k KompatList) Markdown(opts ...Options) string {
 		for j, k8sVersion := range headers {
 			// skip the first column since it's the text header
 			if j == 0 {
-				data[i] = append(data[i], fmt.Sprintf("%s Versions", app.AppName))
+				data[i] = append(data[i], app.Name)
 				continue
 			}
 			allAppVersions := lo.Uniq(lo.Flatten(lo.Values(k8sVersionToAppVersions)))
@@ -270,7 +321,7 @@ func toURL(str string) (string, bool) {
 func readFromURL(url string) ([]byte, error) {
 	if !strings.HasSuffix(url, ".yaml") {
 		if strings.Contains(url, "github.com") {
-			url = fmt.Sprintf("%s/main/%s", url, DefaultFileName)
+			url = fmt.Sprintf("%s/%s/%s", url, DefaultGithubBranch, DefaultFileName)
 			url = strings.Replace(url, "github.com", "raw.githubusercontent.com", 1)
 		}
 	}
