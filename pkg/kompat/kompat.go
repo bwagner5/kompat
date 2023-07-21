@@ -39,7 +39,7 @@ var (
 	DefaultGithubBranch = "main"
 )
 
-type KompatList []Kompat
+type List []Kompat
 
 type Kompat struct {
 	Name          string          `yaml:"name" json:"name"`
@@ -89,7 +89,7 @@ func IsCompatible(appVersion string, k8sVersion string) error {
 	return nil
 }
 
-func Parse(filePaths ...string) (KompatList, error) {
+func Parse(filePaths ...string) (List, error) {
 	var kompats []Kompat
 	if len(filePaths) == 0 {
 		filePaths = append(filePaths, DefaultFileName)
@@ -109,16 +109,16 @@ func Parse(filePaths ...string) (KompatList, error) {
 				return nil, err
 			}
 		}
-		kompatList, err := toKompats(contents)
+		List, err := toKompats(contents)
 		if err != nil {
 			return nil, err
 		}
-		kompats = append(kompats, kompatList...)
+		kompats = append(kompats, List...)
 	}
 	return kompats, nil
 }
 
-func toKompats(contents []byte) (KompatList, error) {
+func toKompats(contents []byte) (List, error) {
 	var kompats []Kompat
 	decoder := yaml.NewDecoder(bytes.NewBuffer(contents))
 	for {
@@ -159,10 +159,10 @@ func (k Kompat) Validate() error {
 }
 
 func (k Kompat) JSON() string {
-	return KompatList{k}.JSON()
+	return List{k}.JSON()
 }
 
-func (k KompatList) JSON() string {
+func (k List) JSON() string {
 	var buffer bytes.Buffer
 	enc := json.NewEncoder(&buffer)
 	enc.SetIndent("", "    ")
@@ -173,10 +173,10 @@ func (k KompatList) JSON() string {
 }
 
 func (k Kompat) YAML() string {
-	return KompatList{k}.YAML()
+	return List{k}.YAML()
 }
 
-func (k KompatList) YAML() string {
+func (k List) YAML() string {
 	var buffer bytes.Buffer
 	enc := yaml.NewEncoder(&buffer)
 	if err := enc.Encode(k); err != nil {
@@ -185,7 +185,7 @@ func (k KompatList) YAML() string {
 	return buffer.String()
 }
 
-func (k Kompat) Markdown(opts ...Options) string {
+func (k Kompat) Markdown(_ ...Options) string {
 	// options := mergeOptions(opts...)
 	out := bytes.Buffer{}
 	table := tablewriter.NewWriter(&out)
@@ -207,7 +207,7 @@ func (k Kompat) Markdown(opts ...Options) string {
 	return out.String()
 }
 
-func (k KompatList) Markdown(opts ...Options) string {
+func (k List) Markdown(opts ...Options) string {
 	options := mergeOptions(opts...)
 	// if len(k) == 1 {
 	// 	return k[0].Markdown()
@@ -260,7 +260,7 @@ func mergeOptions(opts ...Options) Options {
 	return opts[0]
 }
 
-func (k KompatList) k8sVersions() []string {
+func (k List) k8sVersions() []string {
 	var k8sVersions []string
 	for _, app := range k {
 		k8sVersions = append(k8sVersions, lo.Keys(app.expand())...)
