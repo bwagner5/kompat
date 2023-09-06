@@ -15,7 +15,6 @@ package kompat
 
 import (
 	"bytes"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,12 +56,12 @@ type Options struct {
 	Version string
 }
 
-//go:generate cp -r ../../k8s-compatibility.yaml ./
-//go:embed k8s-compatibility.yaml
-var compatibilityFile []byte
-
-func IsCompatible(appVersion string, k8sVersion string) error {
-	kompats, err := toKompats(compatibilityFile)
+func IsCompatible(filePath string, appVersion string, k8sVersion string) error {
+	contents, err := readFromFile(filePath)
+	if err != nil {
+		return err
+	}
+	kompats, err := toKompats(contents)
 	if err != nil {
 		return err
 	}
